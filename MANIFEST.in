@@ -6,6 +6,7 @@ include README.rst
 include *.txt
 include Makefile
 include tox.ini
+include .editorconfig
 
 recursive-include tests *
 recursive-exclude * __pycache__
