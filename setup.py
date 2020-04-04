@@ -2,7 +2,7 @@
 
 """The setup script."""
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -10,11 +10,17 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['Click>=7.0', ]
+requirements = [
+    'Click>=7.0',
+]
 
-setup_requirements = ['pytest-runner', ]
+setup_requirements = [
+    'pytest-runner',
+]
 
-test_requirements = ['pytest>=3', ]
+test_requirements = [
+    'pytest>=3',
+]
 
 setup(
     author="Ryan Culligan",
@@ -32,11 +38,7 @@ setup(
         'Programming Language :: Python :: 3.8',
     ],
     description="message queue",
-    entry_points={
-        'console_scripts': [
-            'tetra=tetra.cli:main',
-        ],
-    },
+    entry_points={'console_scripts': ['tetra=tetra.cli:main',],},  # NOQA E231
     install_requires=requirements,
     license="MIT license",
     long_description=readme + '\n\n' + history,
