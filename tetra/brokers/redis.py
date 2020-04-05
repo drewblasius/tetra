@@ -28,19 +28,30 @@ class BrokerMetrics:
 class RedisBroker:
     """First Broker Type"""
 
-    def __init__(self, role: str, *args, result_database=14, management_databse=15, heartbeat_frequency=60, **kwargs):
+    def __init__(
+        self,
+        role: str,
+        *args,
+        queue_database=13,
+        result_database=14,
+        management_databse=15,
+        heartbeat_frequency=60,
+        **kwargs
+    ):
         self.uuid = uuid.uuid4()
         self.conn = None
         self.connection_args = args
         self.connection_kwargs = kwargs
-        self.management_databse = management_databse
+        self.queue_database = queue_database
+        self.queue_database = management_databse
         self.result_database = result_database
         self.heartbeat_frequency = 60
-        self.connect()
+        self.__connect()
         self.alive = True
         self.pulse = self.__start_heartbeat()
 
-    def connect(self):
+    def __connect(self):
+        self.queue_conn = redis.Redis(*self.connection_args, db=self.queue_database, **self.connection_kwargs)
         self.result_conn = redis.Redis(*self.connection_args, db=self.result_database, **self.connection_kwargs)
         self.management_conn = redis.Redis(*self.connection_args, db=self.management_conn, **self.connection_kwargs)
 
@@ -57,5 +68,8 @@ class RedisBroker:
         pulse.start()
         return pulse
 
-    def register_death(self):
+    def __register_death(self):
         self.alive = False
+
+    def __del__(self):
+        self.__register_death()
