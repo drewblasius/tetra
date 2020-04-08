@@ -5,9 +5,11 @@ include LICENSE
 include README.rst
 include Makefile
 include tox.ini
+include .pyup.yml
 include .editorconfig
 include *.txt
 include *.toml
+
 
 recursive-include tests *
 recursive-exclude * __pycache__

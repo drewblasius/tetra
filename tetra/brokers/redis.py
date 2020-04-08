@@ -1,9 +1,15 @@
 from dataclasses import dataclass
-import redis
 import threading
 import time
 from typing import Dict
 import uuid
+
+from tetra.tools.__config__ import TETRA_UNIT_TESTING
+
+if TETRA_UNIT_TESTING:
+    import fakeredis as redis
+else:
+    import redis
 
 
 @dataclass

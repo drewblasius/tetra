@@ -73,6 +73,7 @@ class Task:
         self.namespace = namespace
         self.name = function.__name__
         self.function = function
+        self.broker = broker
         self.run = self._wrap(function)
         self.run_async = self._wrap_async(function)
         self.retry_settings = retry_settings
