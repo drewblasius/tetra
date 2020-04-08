@@ -39,8 +39,6 @@ setup(
     keywords='tetra',
     name='tetra',
     packages=find_packages(include=['tetra', 'tetra.*']),
-    test_suite='tests',
-    tests_require=config['options']['tests_require'],
     url='https://github.com/TheCulliganMan/tetra',
     version='0.1.0',
     zip_safe=False,
