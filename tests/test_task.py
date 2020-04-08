@@ -21,7 +21,7 @@ def test_task():
 
 
 def test_task_with_args():
-    """Check that the function runs normally 
+    """Check that the function runs normally
     when wrapped with task and task has args"""
     assert HELLO_WORLD_STR == hello_world_with_args()
 

@@ -2,6 +2,7 @@
 
 """The setup script."""
 
+import configparser
 from setuptools import find_packages, setup
 
 with open('README.rst') as readme_file:
@@ -10,15 +11,9 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['Click>=7.0', 'redis>=3.4.1', "tenacity"]
 
-setup_requirements = [
-    'pytest-runner',
-]
-
-test_requirements = [
-    'pytest>=3',
-]
+config = configparser.ConfigParser()
+config.read('setup.cfg')
 
 setup(
     author="Ryan Culligan",
@@ -35,17 +30,17 @@ setup(
     ],
     description="message queue",
     entry_points={'console_scripts': ['tetra=tetra.cli:main',],},  # NOQA E231
-    install_requires=requirements,
     license="MIT license",
     long_description=readme + '\n\n' + history,
     long_description_content_type="text/x-rst",
     include_package_data=True,
+    install_requires=config['options']['install_requires'],
+    setup_requires=config['options']['setup_requires'],
     keywords='tetra',
     name='tetra',
     packages=find_packages(include=['tetra', 'tetra.*']),
-    setup_requires=setup_requirements,
     test_suite='tests',
-    tests_require=test_requirements,
+    tests_require=config['options']['tests_require'],
     url='https://github.com/TheCulliganMan/tetra',
     version='0.1.0',
     zip_safe=False,

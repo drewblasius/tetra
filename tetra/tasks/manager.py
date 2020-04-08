@@ -1,16 +1,13 @@
 from functools import partial
-import logging
 import six
 from tenacity import retry
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Optional
 import uuid
 
 from tetra.brokers import Broker
 from tetra.tools.log import logger
-from tetra.tools.serializers import is_serializable
 
-logger = logging.getLogger(__name__)
-
+# from tetra.tools.serializers import is_serializable
 GLOBAL_NAMESPACE = "global"
 
 
@@ -38,8 +35,7 @@ class RetrySettings:
 
 class TaskRunner:
     @staticmethod
-    def run(function, *args, retry_settings=None, **kwargs):
-        task_id = uuid.uuid4()
+    def run(task_id, function, *args, retry_settings=None, **kwargs):
         try:
             if retry_settings is None:
                 results = function(*args, **kwargs)
@@ -47,14 +43,14 @@ class TaskRunner:
             else:
                 results = retry_settings.retry_wrapper_function(function(*args, **kwargs))
                 return results
+            # store results
             return results
         except Exception as e:
             logger.exception("ERROR")
             raise e
 
     @staticmethod
-    def run_async(function, broker, *args, retry_settings=None, **kwargs):
-        task_id = uuid.uuid4()
+    def run_async(task_id, function, broker, *args, retry_settings=None, **kwargs):
         if retry_settings is None:
             received = broker.add_task(task_id, function.__name__, function, args, kwargs, retry_settings=None)
             assert received, "Broker couldn't take up the task."
@@ -84,7 +80,12 @@ class Task:
     def _wrap(self, f):
         @six.wraps(f)
         def wrapped_f(*args, **kwargs):
-            results = TaskRunner.run(self.function, *args, **kwargs, retry_settings=self.retry_settings)
+            task_id = uuid.uuid4()
+            try:
+                results = TaskRunner.run(task_id, self.function, *args, **kwargs, retry_settings=self.retry_settings)
+            except Exception as e:
+                self.mark_failed(task_id, e)
+            self.store_results(task_id, results)
             return results
 
         return wrapped_f

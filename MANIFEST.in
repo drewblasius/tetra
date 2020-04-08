@@ -3,10 +3,11 @@ include CONTRIBUTING.rst
 include HISTORY.rst
 include LICENSE
 include README.rst
-include *.txt
 include Makefile
 include tox.ini
 include .editorconfig
+include *.txt
+include *.toml
 
 recursive-include tests *
 recursive-exclude * __pycache__
