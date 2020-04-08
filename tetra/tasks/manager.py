@@ -1,12 +1,13 @@
 from functools import partial
-from tenacity import retry
-import uuid
-from typing import Callable, Dict, List, Optional
+import logging
 import six
+from tenacity import retry
+from typing import Callable, Dict, List, Optional
+import uuid
+
 from tetra.brokers import Broker
 from tetra.tools.log import logger
 from tetra.tools.serializers import is_serializable
-import logging
 
 logger = logging.getLogger(__name__)
 
