@@ -18,7 +18,8 @@ tetra
      :target: https://pyup.io/repos/github/TheCulliganMan/tetra/
      :alt: Updates
 
-
+.. image:: https://codecov.io/gh/TheCulliganMan/tetra/branch/master/graph/badge.svg
+     :target: https://codecov.io/gh/TheCulliganMan/tetra
 
 message queue
 
