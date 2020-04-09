@@ -13,7 +13,6 @@ tetra
         :target: https://tetra.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-
 .. image:: https://pyup.io/repos/github/TheCulliganMan/tetra/shield.svg
      :target: https://pyup.io/repos/github/TheCulliganMan/tetra/
      :alt: Updates

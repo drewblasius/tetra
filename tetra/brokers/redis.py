@@ -1,15 +1,15 @@
 from dataclasses import dataclass
 import threading
 import time
-from typing import Dict
+from typing import Any, Dict, Optional
 import uuid
 
 from tetra.tools.__config__ import TETRA_UNIT_TESTING
 
 if TETRA_UNIT_TESTING:
-    import fakeredis as redis
+    import fakeredis as redis  # type: ignore
 else:
-    import redis
+    import redis  # type: ignore
 
 
 @dataclass
@@ -27,7 +27,7 @@ class BrokerTaskMetricsColletion:
 
 @dataclass
 class BrokerMetrics:
-    broker_uuid: uuid.uuid4
+    broker_uuid: uuid.UUID
     broker_tasks: BrokerTaskMetricsColletion
 
 
@@ -79,3 +79,19 @@ class RedisBroker:
 
     def __del__(self):
         self.__register_death()
+
+    def get_work(self, namespace):
+        # self.queue_conn
+        pass
+
+    def add_task(
+        self,
+        task_id: uuid.UUID,
+        namespace: str,
+        priority: int,
+        signature: str,
+        args: tuple,
+        kwargs: Optional[Dict[str, Any]],
+        retry_serializable: Optional[Dict[str, Any]],
+    ):
+        pass
