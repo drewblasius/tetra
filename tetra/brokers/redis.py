@@ -1,10 +1,13 @@
 from dataclasses import dataclass
 import threading
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 import uuid
 
 from tetra.tools.__config__ import TETRA_UNIT_TESTING
+from tetra.tools.log import logger
+from tetra.tools.redis.commands import blpop
+from tetra.tasks.task import Task
 
 if TETRA_UNIT_TESTING:
     import fakeredis as redis  # type: ignore
@@ -52,6 +55,7 @@ class RedisBroker:
         self.queue_database = management_databse
         self.result_database = result_database
         self.heartbeat_frequency = 60
+        self._blpop_timeout = kwargs.get("_blpop_timeout", 10)
         self.__connect()
         self.alive = True
         self.pulse = self.__start_heartbeat()
@@ -80,9 +84,45 @@ class RedisBroker:
     def __del__(self):
         self.__register_death()
 
-    def get_work(self, namespace):
-        # self.queue_conn
+    def get_task_lists_for_namespace(namespace: str) -> List[str]:
         pass
+
+    @staticmethod
+    def _unacked_set_for(task_list_name: str) -> str:
+        return f"{task_list_name}:unacked"
+
+    @staticmethod
+    def _inprocess_set_for(task_list_name: str) -> str:
+        return f"{task_list_name}:in_process"
+
+    def _accept_task(self, task_id: uuid.uuid4, task_list: str):
+        """
+        Acknowledges receipt of `task` by atomically removing the task from its
+        unacked queue and setting the task as in-process
+        """
+
+        unacked_set = self._unacked_set_for(task_list)
+        in_process_set = self._inprocess_set_for(task_list)
+
+        t = time.time()
+        with self.queue_conn.pipeline() as pipe:
+            pipe.srem(unacked_set, task_id)
+            pipe.sadd(in_process_set, task_id)
+            pipe.execute()
+
+        logger.debug(f"accepted task {task_id} in {time.time() - t:.6f}")
+
+    def get_work(self, namespace: str):
+        task_lists = self.get_task_lists_for_namespace(namespace)
+
+        task_bundle = None
+        while task_bundle is None:
+            task_bundle = blpop(self.queue_conn, *task_lists, self._pop_timeout)
+            if task_bundle is not None:
+                task_list, task_id = task_bundle
+                self._accept_task(task_id, task_list)
+                return task_id
+            logger.debug(f"no work found in namespace {namespace}")
 
     def add_task(
         self,

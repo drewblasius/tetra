@@ -46,10 +46,11 @@ class TaskManager:
             return self._tasks[f.__name__].run
 
         return wrap
-
+    
     def work(self) -> None:
-        task: Dict[str, Any] = self.broker.get_work(self.namespace)
-        print(task)
+        while True:
+            task_id = self.broker.get_work(self.namespace)
+
 
     def get_task_by_name(self, signature):
         """Get the Task object by it's signature.
