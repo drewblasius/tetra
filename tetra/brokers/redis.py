@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from dataclasses import dataclass
 import threading
 import time
@@ -33,6 +34,12 @@ class BrokerMetrics:
 
 class RedisBroker:
     """First Broker Type"""
+    
+    ack_script = """
+    -- TODO: Do we need to explicitly call `tonumber`?
+    local now = tonumber(redis.call('TIME'))
+    return redis.call('ZADD', KEYS[1], now, KEYS[2])
+    """
 
     def __init__(
         self,
@@ -55,6 +62,10 @@ class RedisBroker:
         self.__connect()
         self.alive = True
         self.pulse = self.__start_heartbeat()
+        self.__load_scripts()
+
+    def __load_scripts(self):
+        self._ack_cmd = self.queue_conn.register_script(self.ack_script)
 
     def __connect(self):
         self.queue_conn = redis.Redis(*self.connection_args, db=self.queue_database, **self.connection_kwargs)
@@ -83,6 +94,32 @@ class RedisBroker:
     def get_work(self, namespace):
         # self.queue_conn
         pass
+   
+    def __ack_task(self, task_uuid: uuid.uuid4):
+        self._ack_cmd("in_process", task_uuid)
+
+    def __send_task_ack(self, task_uuid: uuid.uuid4):
+        while self.ack:
+            self.__ack_task(task_uuid)
+            time.sleep(self.ack_freq)
+
+    def _start_ack_loop(self, task_uuid: uuid.uuid4):
+        self.ack = True
+        self.ack_thread = threading.Thread(target=self.__ack_loop, args=(task_uuid,))
+        self.ack_thread.start()
+        return self.ack_thread
+
+    def _stop_ack_loop(self):
+        self.ack = False
+        self.ack_thread.join()  # Not sure if necessary
+
+    @contextmanager
+    def ack_loop(self, task_uuid: uuid.uuid4):
+        try:
+            ack_thread = self.start_ack_loop()
+            yield ack_thread
+        finally:
+            self.stop_ack_loop()
 
     def add_task(
         self,

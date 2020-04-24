@@ -1,6 +1,7 @@
 from typing import Any, Callable, Dict, List, Optional
 
 from tetra.brokers import Broker
+from tetra.tasks.executor import Executor
 from tetra.tasks.retry import RetrySettings
 from tetra.tasks.task import Task
 from tetra.tools.__config__ import GLOBAL_NAMESPACE
@@ -49,8 +50,11 @@ class TaskManager:
 
     def work(self) -> None:
         task: Dict[str, Any] = self.broker.get_work(self.namespace)
-        print(task)
+        with self.broker.ack_loop():
+            res = Executor.run(task)
 
+        self.broker.store_results(res)
+        
     def get_task_by_name(self, signature):
         """Get the Task object by it's signature.
         Args:
