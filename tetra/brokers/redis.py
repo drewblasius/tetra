@@ -37,6 +37,10 @@ class RedisBroker:
     
     ack_script = """
     -- TODO: Do we need to explicitly call `tonumber`?
+    local stop_flag = redis.call('EXISTS', KEYS[3])
+    if stop_flag == 1 then
+        return 0
+    end
     local now = tonumber(redis.call('TIME'))
     return redis.call('ZADD', KEYS[1], now, KEYS[2])
     """
@@ -94,11 +98,22 @@ class RedisBroker:
     def get_work(self, namespace):
         # self.queue_conn
         pass
-   
-    def __ack_task(self, task_uuid: uuid.uuid4):
-        self._ack_cmd("in_process", task_uuid)
+    
+    def __set_stop_ack_flag(self, task_uuid: uuid.uuid4):
+        self.management_conn.setex(
+            self.__stop_flag_for(task_uuid),
+            time=self.stop_flag_expiry,
+            value=0
+        )
 
-    def __send_task_ack(self, task_uuid: uuid.uuid4):
+    @staticmethod
+    def __stop_ack_flag_for(task_uuid: uuid.uuid4):
+        return f"stop_ack:{str(task_uuid)}"
+
+    def __ack_task(self, task_uuid: uuid.uuid4):
+        self._ack_cmd(keys=["in_process", str(task_uuid), self.__stop_flag_for(task_uuid)])
+
+    def __ack_loop(self, task_uuid: uuid.uuid4):
         while self.ack:
             self.__ack_task(task_uuid)
             time.sleep(self.ack_freq)
@@ -109,17 +124,17 @@ class RedisBroker:
         self.ack_thread.start()
         return self.ack_thread
 
-    def _stop_ack_loop(self):
+    def _stop_ack_loop(self, task_uuid: uuid.uuid4):
+        self.__set_stop_ack_flag(task_uuid)
         self.ack = False
-        self.ack_thread.join()  # Not sure if necessary
 
     @contextmanager
     def ack_loop(self, task_uuid: uuid.uuid4):
         try:
-            ack_thread = self.start_ack_loop()
+            ack_thread = self._start_ack_loop(task_uuid)
             yield ack_thread
         finally:
-            self.stop_ack_loop()
+            self._stop_ack_loop(task_uuid)
 
     def add_task(
         self,
